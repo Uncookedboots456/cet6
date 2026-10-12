@@ -58,7 +58,7 @@ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&qu
 const bar=(a,b)=>`<div class="bar"><i style="width:${b?a/b*100:0}%"></i></div>`;
 function done(msg,again){app.innerHTML=`<div class="done"><div class="big">🎉</div><h2>${msg}</h2><p class="sub">休息一下眼睛，再来一组？</p><button class="pri" onclick="${again}">再来一组</button></div>`}
 
-/* 闪卡：只手动翻面（点卡片/翻面/空格），只用“下一个”（→）前进；无任何定时器 */
+/* 闪卡：只能用空格翻面，只用“下一个”（→）前进；无任何定时器 */
 let KEY=null,GEN=0;const later=(f,ms)=>{const g=GEN;setTimeout(()=>{if(g==GEN)f()},ms)};
 function card(){let pool=W.map((_,i)=>i).filter(i=>!S.known[i]);if(!pool.length)pool=W.map((_,i)=>i);
  let q=shuf(pool).slice(0,BATCH),n=q.length,ok=0;
@@ -66,17 +66,15 @@ function card(){let pool=W.map((_,i)=>i).filter(i=>!S.known[i]);if(!pool.length)
   const i=q[0],w=W[i];let mark=null;
   app.innerHTML=`<div class="stats"><span>本组 ${ok}/${n}</span><span>剩余 ${q.length}</span></div>${bar(ok,n)}
   <div class="flip" id="fc"><div class="inner"><div class="face"><div class="word">${esc(w.w)}</div><div class="ph">${esc(w.ph)}</div>
-  <div><button class="snd" id="b1">🔊 单词</button></div><div class="hint">点击卡片 / 空格 翻面</div></div>
+  <div><button class="snd" id="b1">🔊 单词</button></div><div class="hint">按空格翻面</div></div>
   <div class="face back"><div class="word" style="font-size:26px">${esc(w.w)}</div><div class="mean">${esc(w.m)}</div><div class="ex">${esc(w.ex)}</div>
   <div><button class="snd" id="b2">🔊 单词</button><button class="snd" id="b3">🔊 例句</button></div></div></div></div>
-  <div class="row" style="margin-bottom:10px"><button class="bad" id="no">不认识</button><button id="flip">翻面</button><button class="good" id="yes">认识 ✓</button></div>
+  <div class="row" style="margin-bottom:10px"><button class="bad" id="no">不认识</button><button class="good" id="yes">认识 ✓</button></div><div class="hint" style="text-align:center;margin:0 0 10px">按空格翻面</div>
   <button class="pri" id="next" style="width:100%">下一个 →</button>
-  <div class="keys">空格 翻面 · → 下一个 · 1 不认识 · 2 认识 · P 发音</div>`;
+  <div class="keys">空格 翻面（仅空格）· → 下一个 · 1 不认识 · 2 认识 · P 发音</div>`;
   const fc=$('#fc'),flip=()=>fc.classList.toggle('f');
-  fc.onclick=e=>{if(!e.target.closest('button'))flip()};
   const stop=f=>e=>{e.stopPropagation();f()};
   $('#b1').onclick=$('#b2').onclick=stop(()=>pw(i));$('#b3').onclick=stop(()=>pe(i));
-  $('#flip').onclick=flip;
   const setM=v=>{mark=v;if(v)S.known[i]=1;else delete S.known[i];save();$('#yes').classList.toggle('mark',v===true);$('#no').classList.toggle('mark',v===false)};
   $('#yes').onclick=()=>setM(true);$('#no').onclick=()=>setM(false);
   const next=()=>{if(mark===false)q.push(q.shift());else{q.shift();ok++}show()};
@@ -138,7 +136,8 @@ function syl(){const q=shuf(W.map((_,i)=>i));let k=0,right=0;
  };show()}
 
 const M={card,quiz,spell,syl};
-document.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.ctrlKey||e.metaKey||e.altKey)return;if(KEY){if(e.key==' '&&e.target.tagName=='BUTTON')e.preventDefault();KEY(e)}});
+document.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==' ')e.preventDefault();if(KEY)KEY(e)});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});
 const thB=document.getElementById('th'),setTh=v=>{document.documentElement.dataset.theme=v;thB.textContent=v=='light'?'🌙 深色':'☀️ 浅色';localStorage.setItem('cet6_theme',v)};
 setTh(localStorage.getItem('cet6_theme')||'dark');thB.onclick=()=>setTh(document.documentElement.dataset.theme=='light'?'dark':'light');
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));S.mode=b.dataset.m;save();KEY=null;GEN++;b.blur();M[b.dataset.m]()});
